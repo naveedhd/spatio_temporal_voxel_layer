@@ -1,7 +1,28 @@
 <launch>
-    <node name="stvl_minimal_test" pkg="spatio_temporal_voxel_layer" type="minimal_test" output="screen">
+  <arg name="costmap_type" default="local" doc="either local OR global" />
 
-    <rosparam file="$(find spatio_temporal_voxel_layer)/example/global_costmap_params.yaml" command="load" />
-    <rosparam file="$(find spatio_temporal_voxel_layer)/example/standard_environment_config.yaml" command="load" ns="global_costmap"/>
-    </node>
+  <!-- necessary transforms -->
+  <node pkg="tf" type="static_transform_publisher" name="camera_transform_broadcaster"
+        args="0 0 2 0 0 0 1 base_link camera_link 100" />
+  <node pkg="tf" type="static_transform_publisher" name="base_transform_broadcaster"
+        args="2 0 0 0 0 0 1 map base_link 100" />
+
+  <!-- dummy map -->
+  <node name="dummy_map_publisher" pkg="spatio_temporal_voxel_layer" type="map_publisher.py"
+        if="$(eval costmap_type == 'global')" />
+
+  <!-- spatio-temporal voxel layer -->
+  <node name="stvl_minimal_test" pkg="spatio_temporal_voxel_layer" type="minimal_test" output="screen">
+    <rosparam file="$(find spatio_temporal_voxel_layer)/example/$(arg costmap_type)_costmap_params.yaml" command="load" />
+    <rosparam file="$(find spatio_temporal_voxel_layer)/example/standard_environment_config.yaml" command="load" ns="$(arg costmap_type)_costmap"/>
+    <param name="costmap_namespace" value="$(arg costmap_type)_costmap" />
+  </node>
+
+  <!-- point cloud publisher -->
+  <node name="dummy_publisher" pkg="spatio_temporal_voxel_layer" type="point_cloud_publisher.py" />
+
+  <!-- rviz -->
+  <node name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find spatio_temporal_voxel_layer)/rviz/minimal_$(arg costmap_type).rviz" />
+
 </launch>

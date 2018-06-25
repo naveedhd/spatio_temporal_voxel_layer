@@ -36,45 +36,22 @@
  * Purpose: Test minimum configuration of costmap_2d
 /*********************************************************************/
 
-
 #include <ros/ros.h>
 #include <costmap_2d/costmap_2d_ros.h>
 #include <tf/transform_broadcaster.h>
-#include <thread>
 
-
-/*****************************************************************************/
-void TransformThread()
-/*****************************************************************************/
-{
-  tf::TransformBroadcaster tfB;
-  tf::Transform transform;
-  transform.setIdentity();
-  transform.setOrigin(tf::Vector3(2.,2.,0.));
-
-  ros::Rate r(20);
-  while (ros::ok())
-  {
-    tfB.sendTransform(tf::StampedTransform(transform, ros::Time::now(), \
-                                                        "/map", "/base_link"));
-    tfB.sendTransform(tf::StampedTransform(transform, ros::Time::now(), \
-                                                "/base_link", "/camera_link"));
-    r.sleep();
-    ros::spinOnce();
-  }
-}
 
 /*****************************************************************************/
 int main(int argc, char **argv)
 /*****************************************************************************/
 {
   ros::init(argc, argv, "STVL_minimal_test");
+  ros::NodeHandle nh("~");
+  std::string costmap_namespace;
+  nh.param<std::string>("costmap_namespace", costmap_namespace, "local_costmap");
 
   tf::TransformListener tf;
-
-  std::thread t(TransformThread);
-
-  costmap_2d::Costmap2DROS costmap("global_costmap", tf);
+  costmap_2d::Costmap2DROS costmap(costmap_namespace, tf);
   costmap.start();
 
   ros::Rate r(10);
